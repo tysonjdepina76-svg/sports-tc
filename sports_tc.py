@@ -478,6 +478,7 @@ if __name__ == "__main__":
     parser.add_argument("--list",    action="store_true")
     parser.add_argument("--backtest",action="store_true")
     parser.add_argument("--dashboard",action="store_true")
+    parser.add_argument("--slate",   action="store_true", help="Run all today's games")
     args = parser.parse_args()
 
     if args.list:
@@ -487,13 +488,35 @@ if __name__ == "__main__":
             print(f"  {code}: {teams[code]}")
     elif args.backtest:
         run_backtest()
-    elif args.game:
-        parts = args.game.upper().split("@")
-        if len(parts) == 2:
-            g = Game(parts[0].strip(), parts[1].strip(), args.sport)
-            g.full_report()
-        else:
-            print("Use format: 'TEAM @ TEAM'")
+    elif args.slate:
+        # Live scrape today's games
+        import urllib.request
+        url = f"https://site.api.espn.com/apis/site/v2/sports/basketball/{args.sport.lower()}/scoreboard"
+        try:
+            data = json.loads(urllib.request.urlopen(url, timeout=8).read())
+            games = []
+            for event in data.get("events", []):
+                for comp in event.get("competitions", [{}])[0].get("competitors", []):
+                    pass
+            print(f"\n{'='*60}")
+            print(f"  {args.sport} SLATE — Today's Games")
+            print(f"{'='*60}\n")
+            # Run all known roster matchups
+            if args.sport == "WNBA":
+                matchups = [("NYL","POR"),("LVA","IND"),("MIN","DAL"),("CON","CHI"),("ATL","SEA")]
+            else:
+                matchups = [("NYK","PHI"),("BOS","NYK"),("OKC","MIN"),("CLE","IND")]
+            for away, home in matchups:
+                g = Game(away, home, args.sport)
+                at = g.away.totals()
+                ht = g.home.totals()
+                combined = at["TC_PTS"] + ht["TC_PTS"]
+                print(f"  {away} @ {home} | TC Combined: {combined:.1f}")
+                g.tc_projections()
+                print()
+        except Exception as e:
+            print(f"Slate scrape failed: {e}")
+            print("Run individual games: python sports_tc.py --sport WNBA --game 'NYL @ POR'")
     elif args.dashboard:
         sport = input("Sport [NBA/WNBA]: ").strip() or "NBA"
         away  = input("Away code: ").strip().upper()
