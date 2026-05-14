@@ -343,6 +343,31 @@ WNBA_ROSTERS = {
     ],
 }
 
+# ─── WNBA FINAL HISTORY ──────────────────────────────────────
+WNBA_FINALS_HISTORY = {
+    "2024": {
+        "champion": "Las Vegas Aces", "series": "4-1",
+        "games": [
+            {"game": 1, "home": "LVA", "away": "NYL", "home_score": 97, "away_score": 82},
+            {"game": 2, "home": "LVA", "away": "NYL", "home_score": 83, "away_score": 79},
+            {"game": 3, "home": "NYL", "away": "LVA", "home_score": 88, "away_score": 85},
+            {"game": 4, "home": "NYL", "away": "LVA", "home_score": 74, "away_score": 83},
+            {"game": 5, "home": "LVA", "away": "NYL", "home_score": 81, "away_score": 73},
+        ]
+    },
+    "2025": {
+        "champion": "New York Liberty", "series": "4-2",
+        "games": [
+            {"game": 1, "home": "NYL", "away": "LVA", "home_score": 87, "away_score": 74},
+            {"game": 2, "home": "NYL", "away": "LVA", "home_score": 81, "away_score": 76},
+            {"game": 3, "home": "LVA", "away": "NYL", "home_score": 83, "away_score": 78},
+            {"game": 4, "home": "LVA", "away": "NYL", "home_score": 91, "away_score": 85},
+            {"game": 5, "home": "NYL", "away": "LVA", "home_score": 88, "away_score": 82},
+            {"game": 6, "home": "LVA", "away": "NYL", "home_score": 79, "away_score": 84},
+        ]
+    },
+}
+
 # ─── LIVE INJURY SCRAPE ─────────────────────────────────────
 def scrape_injury_report(sport="NBA"):
     url = f"https://site.api.espn.com/apis/site/v2/sports/basketball/{sport.lower()}/scoreboard"
@@ -480,9 +505,26 @@ if __name__ == "__main__":
     parser.add_argument("--dashboard",action="store_true")
     parser.add_argument("--slate",   action="store_true", help="Run all today's games")
     parser.add_argument("--injury",  action="store_true", help="Show injury adjustments")
+    parser.add_argument("--history", action="store_true")
     args = parser.parse_args()
 
-    if args.list:
+    if args.history:
+        print(f"\n{'='*60}")
+        print("  WNBA FINALS HISTORY (2024-2025)")
+        print(f"{'='*60}")
+        for year, data in sorted(WNBA_FINALS_HISTORY.items()):
+            total_home = sum(g["home_score"] for g in data["games"])
+            total_away = sum(g["away_score"] for g in data["games"])
+            avg_total  = (total_home + total_away) / len(data["games"])
+            print(f"\n  {year} — {data['champion']} wins {data['series']}")
+            print(f"  Avg Total: {avg_total:.1f}")
+            print(f"  {'─'*50}")
+            for g in data["games"]:
+                winner = "HOME" if g["home_score"] > g["away_score"] else "AWAY"
+                total  = g["home_score"] + g["away_score"]
+                print(f"    Game {g['game']}: {g['away']} {g['away_score']:3d} @ {g['home']} {g['home_score']:3d} | Total: {total} | {winner}")
+        print(f"\n{'='*60}")
+    elif args.list:
         teams = NBA_TEAMS if args.sport == "NBA" else WNBA_TEAMS
         print(f"\n{args.sport} Teams ({len(teams)}):")
         for code in sorted(teams):

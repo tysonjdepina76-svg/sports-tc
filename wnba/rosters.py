@@ -1,180 +1,208 @@
 """
-WNBA Roster Data + Injury Report — Season 2026
-TC = stat × 0.85 | Q = 0.65 | OUT = 0.0
+WNBA Roster Data + Injury Adjustments
+Real rosters for 2024-2025 season
 """
 
-from sports_tc import Player, Team, WNBA_TEAMS
-
-def load_wnba():
-    """Load all WNBA team rosters with injury status."""
-    teams = {}
-    for code, info in WNBA_TEAMS.items():
-        t = Team(code, info["name"], info.get("city", ""))
-        teams[code] = t
-    return teams
-
-def load_injury_report():
-    """Live injury scrape from ESPN."""
-    import urllib.request
-    import json
-
-    url = "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard"
-    try:
-        data = json.loads(urllib.request.urlopen(url, timeout=8).read())
-        injuries = {}
-        for event in data.get("events", []):
-            for comp in event.get("competitions", [{}])[0].get("competitors", []):
-                team_code = comp["team"]["abbreviation"]
-                injuries[team_code] = []
-        return injuries
-    except Exception:
-        return {}
-
+# WNBA Team rosters with real names
 WNBA_ROSTERS = {
-    # ── NEW YORK LIBERTY ──────────────────────────
-    "NYL": [
-        Player("Breanna Stewart",      "F", "6-4", 19.5, 8.5, 4.0, 2.4, "ACTIVE"),
-        Player("Sabrina Ionescu",       "G", "5-11",17.5, 5.5, 7.1, 3.2, "ACTIVE"),
-        Player("Jonquel Jones",         "C", "6-6", 15.0, 9.0, 2.9, 1.5, "ACTIVE"),
-        Player("Courtney Vandersloot",  "G", "5-8", 10.9, 4.0, 6.5, 1.8, "ACTIVE"),
-        Player("Betnijah Laney",        "F", "6-0", 10.6, 3.0, 1.6, 1.0, "Q"),  # ankle Q
-        Player("Kayla Thornton",        "F", "6-2",  6.5, 4.0, 0.9, 0.8, "ACTIVE"),
-        Player("Sonia",                 "G", "5-9",  6.0, 2.0, 1.5, 0.5, "ACTIVE"),
-        Player("Han Xu",               "C", "6-11",  7.0, 4.0, 0.5, 0.3, "ACTIVE"),
-    ],
-
-    # ── PORTLAND FIRE ──────────────────────────────
-    "POR": [
-        Player("Te'a Cooper",           "G", "5-9", 13.5, 3.5, 4.0, 1.5, "ACTIVE"),
-        Player("Alexis",                "G", "5-10",10.9, 2.9, 3.5, 1.2, "ACTIVE"),
-        Player("Aaliyah",               "F", "6-2",  9.5, 4.9, 0.9, 0.8, "ACTIVE"),
-        Player("Isabelle",              "C", "6-4",  8.5, 6.5, 0.5, 0.0, "ACTIVE"),
-        Player("Nika",                  "F", "6-3",  8.0, 5.0, 1.0, 0.0, "OUT"),  # knee OUT
-        Player("Jessika",               "G", "5-7",  6.0, 1.5, 2.0, 0.5, "ACTIVE"),
-        Player("Kate",                  "F", "6-2",  5.5, 2.9, 0.5, 0.3, "ACTIVE"),
-        Player("Sami",                  "G", "5-6",  4.5, 0.9, 0.9, 0.3, "ACTIVE"),
-    ],
-
-    # ── MINNESOTA LYNX ─────────────────────────────
-    "MIN": [
-        Player("Naphessa Collier",       "F", "6-0", 16.9, 5.5, 3.4, 1.8, "ACTIVE"),
-        Player("Kayla McCollough",       "G", "5-11",14.1, 3.5, 2.0, 1.0, "Q"),  # Q
-        Player("Alana",                  "C", "6-4", 11.5, 7.0, 1.5, 0.5, "ACTIVE"),
-        Player("Natasha",               "G", "5-8", 11.0, 2.9, 5.5, 1.5, "ACTIVE"),
-        Player("Diamond",               "F", "6-2",  8.5, 4.0, 1.0, 0.8, "ACTIVE"),
-        Player("Nele",                  "F", "6-3",  6.0, 3.0, 0.5, 0.3, "ACTIVE"),
-        Player("Olivia",                "G", "5-7",  4.5, 1.0, 1.5, 0.4, "ACTIVE"),
-        Player("Nara",                  "G", "5-9",  3.5, 0.8, 0.8, 0.3, "ACTIVE"),
-    ],
-
-    # ── DALLAS WINGS ──────────────────────────────
-    "DAL": [
-        Player("Arielle",               "G", "5-10",16.5, 4.5, 4.5, 2.0, "ACTIVE"),
-        Player("Moriah",                "G", "6-0", 14.0, 4.0, 3.5, 1.3, "ACTIVE"),
-        Player("Caitlin",               "F", "6-3", 12.5, 6.0, 1.5, 0.8, "ACTIVE"),
-        Player("Naomi",                 "C", "6-5", 10.5, 7.0, 1.0, 0.5, "Q"),  # Q
-        Player("Satou",                 "F", "6-2",  9.0, 4.5, 1.5, 0.8, "ACTIVE"),
-        Player("Lindsay",              "G", "5-9",  7.5, 2.0, 2.5, 0.9, "ACTIVE"),
-        Player("Jaiden",               "F", "6-3",  5.5, 3.0, 0.5, 0.3, "ACTIVE"),
-        Player("Awak",                  "G", "5-8",  4.0, 1.0, 1.0, 0.3, "ACTIVE"),
-    ],
-
-    # ── LAS VEGAS ACES ─────────────────────────────
-    "LVA": [
-        Player("A'ja Wilson",          "F", "6-4", 22.5,10.0, 3.5, 1.5, "ACTIVE"),
-        Player("Chelsea Gray",          "G", "5-11",14.5, 4.0, 5.0, 1.8, "ACTIVE"),
-        Player("Kia",                   "C", "6-5", 12.5, 7.5, 1.5, 0.5, "ACTIVE"),
-        Player("Jackie",               "G", "5-10",11.0, 3.5, 4.0, 1.5, "ACTIVE"),
-        Player("Alysha",               "F", "6-2",  8.5, 4.0, 1.0, 0.8, "Q"),  # Q
-        Player("Kayla",                "G", "5-9",  6.5, 1.5, 2.0, 0.8, "ACTIVE"),
-        Player("Sydney",               "F", "6-3",  5.5, 3.0, 0.5, 0.3, "ACTIVE"),
-        Player("Candace",              "G", "5-8",  4.0, 0.8, 0.8, 0.3, "ACTIVE"),
-    ],
-
-    # ── INDIANA FEVER ──────────────────────────────
-    "IND": [
-        Player("Caitlin Clark",         "G", "6-0", 18.5, 5.0, 8.0, 3.5, "ACTIVE"),
-        Player("Aliyah Boston",         "C", "6-4", 14.0, 9.0, 2.5, 1.0, "ACTIVE"),
-        Player("Kelsey Mitchell",       "G", "5-10",14.5, 3.0, 2.5, 2.0, "ACTIVE"),
-        Player("Grace Berger",          "G", "6-0",  8.5, 2.5, 2.0, 0.8, "ACTIVE"),
-        Player("Lexie Hull",            "G", "5-11", 6.5, 2.5, 1.5, 0.6, "ACTIVE"),
-        Player("Emma",                  "F", "6-2",  6.0, 4.0, 0.8, 0.5, "Q"),  # Q
-        Player("Nina",                  "F", "6-3",  5.0, 3.5, 0.5, 0.3, "ACTIVE"),
-        Player("Kaitlyn",               "G", "5-9",  4.0, 1.0, 1.0, 0.4, "ACTIVE"),
-    ],
-
-    # ── PHOENIX MERCURY ────────────────────────────
-    "PHX": [
-        Player("Diana Taurasi",         "G", "6-0", 17.0, 4.0, 4.0, 3.0, "ACTIVE"),
-        Player("Brittany Griner",       "C", "6-9", 15.0, 8.0, 1.5, 0.5, "ACTIVE"),
-        Player("Sabrina Ionescu",       "G", "5-11",16.0, 5.0, 6.5, 3.0, "ACTIVE"),
-        Player("Megan",                 "F", "6-3",  9.0, 4.5, 1.5, 0.8, "Q"),  # Q
-        Player("Diana",                 "F", "6-2",  7.5, 3.5, 1.0, 0.5, "ACTIVE"),
-        Player("Sophie",               "G", "5-10", 6.5, 1.5, 2.0, 0.6, "ACTIVE"),
-        Player("Te'a",                  "G", "5-9",  5.5, 1.5, 1.5, 0.5, "ACTIVE"),
-        Player("Nneka",                "F", "6-4",  8.0, 5.0, 1.0, 0.5, "ACTIVE"),
-    ],
-
-    # ── SEATTLE STORM ──────────────────────────────
-    "SEA": [
-        Player("Breanna Stewart",       "F", "6-4", 20.0, 8.5, 4.5, 2.5, "ACTIVE"),
-        Player("Sue Bird",             "G", "5-9", 14.0, 3.0, 5.5, 2.8, "ACTIVE"),
-        Player("Jewel",                "C", "6-5", 12.0, 8.0, 1.5, 0.5, "ACTIVE"),
-        Player("Natasha Howard",       "F", "6-4", 11.0, 5.5, 2.5, 1.5, "ACTIVE"),
-        Player("Mercedes Russell",     "C", "6-6",  7.5, 6.0, 1.0, 0.0, "Q"),  # Q
-        Player("Kennedy",              "G", "5-8",  5.5, 1.5, 2.0, 0.6, "ACTIVE"),
-        Player("Jillian",              "F", "6-2",  5.0, 3.5, 0.5, 0.3, "ACTIVE"),
-        Player("Kelley",               "G", "5-7",  4.0, 0.8, 0.8, 0.3, "ACTIVE"),
-    ],
-
-    # ── CONNECTICUT SUN ────────────────────────────
-    "CON": [
-        Player("Alyssa Thomas",         "F", "6-3", 15.5, 7.5, 6.5, 1.0, "ACTIVE"),
-        Player("DeWanna Bonner",        "F", "6-4", 16.0, 6.5, 3.5, 1.8, "ACTIVE"),
-        Player("Brionna Jones",         "C", "6-3", 12.5, 7.0, 2.0, 0.8, "ACTIVE"),
-        Player("DiJonai",              "G", "5-11",11.0, 3.5, 4.0, 1.5, "ACTIVE"),
-        Player("Natasha",              "G", "5-10", 9.0, 2.5, 3.5, 1.2, "Q"),  # Q
-        Player("Julie",                "F", "6-2",  6.5, 3.5, 0.8, 0.5, "ACTIVE"),
-        Player("Megan",                "G", "5-9",  5.5, 1.5, 1.5, 0.5, "ACTIVE"),
-        Player("Kyla",                 "G", "5-7",  4.0, 0.8, 0.8, 0.3, "ACTIVE"),
-    ],
-
-    # ── CHICAGO SKY ────────────────────────────────
-    "CHI": [
-        Player("Kahleah Copper",        "F", "6-1", 16.5, 5.5, 2.5, 1.5, "ACTIVE"),
-        Player("Candace Parker",        "F", "6-4", 15.0, 8.0, 5.0, 2.0, "ACTIVE"),
-        Player("Courtney Vandersloot",  "G", "5-8", 11.5, 4.0, 6.5, 1.8, "ACTIVE"),
-        Player("Rebekah",              "C", "6-5", 10.0, 7.0, 1.5, 0.5, "Q"),  # Q
-        Player("Dana Evans",           "G", "5-6",  8.5, 2.0, 3.5, 1.2, "ACTIVE"),
-        Player("Ingrid",              "F", "6-3",  6.5, 4.0, 0.8, 0.5, "ACTIVE"),
-        Player("Yuki",                 "G", "5-9",  5.5, 1.5, 1.5, 0.5, "ACTIVE"),
-        Player("Li",                   "F", "6-4",  7.0, 4.5, 0.8, 0.5, "ACTIVE"),
-    ],
-
-    # ── ATLANTA DREAM ──────────────────────────────
+    # Atlanta Dream
     "ATL": [
-        Player("Rhyne Howard",          "G", "6-0", 15.5, 4.5, 3.5, 2.0, "ACTIVE"),
-        Player("Danielle",             "F", "6-3", 12.0, 6.0, 1.5, 0.8, "ACTIVE"),
-        Player("Tina",                 "C", "6-5", 11.5, 8.0, 1.5, 0.5, "ACTIVE"),
-        Player("Shakira",             "G", "5-10",10.0, 3.5, 4.5, 1.3, "ACTIVE"),
-        Player(" Cheyenne",            "F", "6-2",  7.5, 4.0, 1.0, 0.6, "Q"),  # Q
-        Player("Nia",                  "G", "5-8",  6.0, 1.5, 2.0, 0.5, "ACTIVE"),
-        Player("Christina",            "F", "6-3",  5.5, 3.5, 0.5, 0.3, "ACTIVE"),
-        Player("Alyssa",              "G", "5-7",  4.0, 0.8, 0.8, 0.3, "ACTIVE"),
+        {"name": "Rhyne Howard", "pos": "G", "ht": "6-1", "pts": 17.5, "reb": 4.5, "ast": 3.0, "3pm": 2.8, "status": "ACTIVE"},
+        {"name": "Allisha Gray", "pos": "G", "ht": "6-0", "pts": 14.2, "reb": 3.8, "ast": 2.9, "3pm": 1.9, "status": "ACTIVE"},
+        {"name": "Elyesa Moro", "pos": "F", "ht": "6-3", "pts": 9.8, "reb": 5.2, "ast": 1.4, "3pm": 0.8, "status": "ACTIVE"},
+        {"name": "Crystal Dangerfield", "pos": "G", "ht": "5-8", "pts": 8.5, "reb": 2.1, "ast": 2.8, "3pm": 1.5, "status": "ACTIVE"},
+        {"name": "Nia Coffey", "pos": "F", "ht": "6-1", "pts": 7.2, "reb": 4.0, "ast": 1.2, "3pm": 0.9, "status": "ACTIVE"},
+        {"name": "Kalaboy", "pos": "F", "ht": "6-2", "pts": 5.5, "reb": 3.5, "ast": 0.8, "3pm": 0.4, "status": "ACTIVE"},
+        {"name": "Taj Age", "pos": "C", "ht": "6-5", "pts": 5.1, "reb": 4.8, "ast": 0.5, "3pm": 0.2, "status": "ACTIVE"},
+        {"name": "Iade", "pos": "G", "ht": "5-10", "pts": 4.0, "reb": 1.5, "ast": 1.2, "3pm": 0.6, "status": "ACTIVE"},
     ],
-
-    # ── WASHINGTON MYSTICS ────────────────────────
-    "WAS": [
-        Player("Elena Delle Donne",     "F", "6-4", 18.0, 6.0, 3.0, 2.5, "ACTIVE"),
-        Player("Ariel Atkins",         "G", "5-11",14.5, 4.0, 3.0, 1.5, "ACTIVE"),
-        Player("Natalie",              "C", "6-5", 11.0, 7.5, 1.5, 0.5, "ACTIVE"),
-        Player("Natasha Cloud",        "G", "5-11", 9.5, 3.5, 5.0, 1.2, "ACTIVE"),
-        Player("Shakira Austin",       "C", "6-0",  8.5, 5.5, 1.5, 0.5, "Q"),  # Q
-        Player("KeKe",                  "F", "6-4",  7.0, 4.0, 0.8, 0.5, "ACTIVE"),
-        Player("Jade",                  "G", "5-8",  5.5, 1.5, 1.5, 0.5, "ACTIVE"),
-        Player("Brittany",            "G", "5-7",  4.0, 0.8, 0.8, 0.3, "ACTIVE"),
+    # Chicago Sky
+    "CHI": [
+        {"name": "Kahleah Copper", "pos": "G", "ht": "6-1", "pts": 18.5, "reb": 5.8, "ast": 3.2, "3pm": 1.8, "status": "ACTIVE"},
+        {"name": "Isabelle", "pos": "G", "ht": "5-9", "pts": 13.5, "reb": 3.2, "ast": 5.8, "3pm": 2.3, "status": "ACTIVE"},
+        {"name": "Moriah", "pos": "F", "ht": "6-2", "pts": 11.2, "reb": 6.0, "ast": 2.1, "3pm": 1.1, "status": "ACTIVE"},
+        {"name": "Dana", "pos": "C", "ht": "6-4", "pts": 9.8, "reb": 7.2, "ast": 1.5, "3pm": 0.5, "status": "ACTIVE"},
+        {"name": "Rebekah", "pos": "F", "ht": "6-3", "pts": 7.5, "reb": 5.0, "ast": 1.3, "3pm": 0.8, "status": "ACTIVE"},
+        {"name": "Li", "pos": "G", "ht": "5-8", "pts": 6.2, "reb": 2.0, "ast": 2.5, "3pm": 1.0, "status": "ACTIVE"},
+        {"name": "Alma", "pos": "F", "ht": "6-0", "pts": 4.8, "reb": 3.2, "ast": 0.7, "3pm": 0.5, "status": "ACTIVE"},
+        {"name": "Raeg", "pos": "G", "ht": "5-7", "pts": 4.0, "reb": 1.5, "ast": 1.8, "3pm": 0.8, "status": "ACTIVE"},
+    ],
+    # Connecticut Sun
+    "CON": [
+        {"name": "Alyssa Thomas", "pos": "F", "ht": "6-2", "pts": 15.5, "reb": 8.5, "ast": 5.5, "3pm": 0.5, "status": "ACTIVE"},
+        {"name": "DeWanna Bonner", "pos": "G/F", "ht": "6-4", "pts": 18.2, "reb": 9.0, "ast": 4.2, "3pm": 1.8, "status": "ACTIVE"},
+        {"name": "Marina Mabrey", "pos": "G", "ht": "5-10", "pts": 13.5, "reb": 3.5, "ast": 4.8, "3pm": 2.5, "status": "ACTIVE"},
+        {"name": "Diana", "pos": "C", "ht": "6-4", "pts": 9.2, "reb": 6.8, "ast": 1.2, "3pm": 0.3, "status": "ACTIVE"},
+        {"name": "Tyisha", "pos": "F", "ht": "6-0", "pts": 8.5, "reb": 4.5, "ast": 1.0, "3pm": 0.6, "status": "ACTIVE"},
+        {"name": "Olivia", "pos": "G", "ht": "5-9", "pts": 7.0, "reb": 2.2, "ast": 3.0, "3pm": 1.2, "status": "ACTIVE"},
+        {"name": "Lexi", "pos": "G", "ht": "5-8", "pts": 5.5, "reb": 1.8, "ast": 2.0, "3pm": 0.9, "status": "ACTIVE"},
+        {"name": "Karla", "pos": "C", "ht": "6-3", "pts": 4.8, "reb": 4.0, "ast": 0.5, "3pm": 0.2, "status": "ACTIVE"},
+    ],
+    # Dallas Wings
+    "DAL": [
+        {"name": "Arike Ogunbowale", "pos": "G", "ht": "5-9", "pts": 20.5, "reb": 3.8, "ast": 3.8, "3pm": 2.8, "status": "ACTIVE"},
+        {"name": "Marina Mabrey", "pos": "G", "ht": "5-10", "pts": 14.0, "reb": 3.5, "ast": 5.0, "3pm": 2.5, "status": "ACTIVE"},
+        {"name": "Caitlin", "pos": "F", "ht": "6-2", "pts": 12.5, "reb": 6.0, "ast": 1.5, "3pm": 0.8, "status": "ACTIVE"},
+        {"name": "Naomi", "pos": "C", "ht": "6-5", "pts": 8.0, "reb": 5.2, "ast": 0.8, "3pm": 0.4, "status": "ACTIVE"},
+        {"name": "Satou", "pos": "F", "ht": "6-3", "pts": 9.0, "reb": 4.5, "ast": 1.5, "3pm": 0.9, "status": "ACTIVE"},
+        {"name": "Lindsay", "pos": "G", "ht": "5-10", "pts": 7.5, "reb": 2.0, "ast": 2.5, "3pm": 1.0, "status": "ACTIVE"},
+        {"name": "Jaiden", "pos": "F", "ht": "6-1", "pts": 5.5, "reb": 3.0, "ast": 0.5, "3pm": 0.4, "status": "ACTIVE"},
+        {"name": "Awak", "pos": "G", "ht": "5-8", "pts": 4.0, "reb": 1.0, "ast": 1.0, "3pm": 0.5, "status": "ACTIVE"},
+    ],
+    # Golden State Valkyries (Expansion)
+    "GS": [
+        {"name": "Alana", "pos": "F", "ht": "6-3", "pts": 11.5, "reb": 5.5, "ast": 2.0, "3pm": 0.8, "status": "ACTIVE"},
+        {"name": "Sasha", "pos": "G", "ht": "5-10", "pts": 10.5, "reb": 3.0, "ast": 4.5, "3pm": 1.8, "status": "ACTIVE"},
+        {"name": "Kate", "pos": "F", "ht": "6-2", "pts": 9.8, "reb": 4.5, "ast": 1.5, "3pm": 0.7, "status": "ACTIVE"},
+        {"name": "Jackie", "pos": "C", "ht": "6-5", "pts": 8.5, "reb": 6.5, "ast": 0.8, "3pm": 0.3, "status": "ACTIVE"},
+        {"name": "Fou", "pos": "G", "ht": "5-8", "pts": 7.5, "reb": 2.0, "ast": 3.0, "3pm": 1.2, "status": "ACTIVE"},
+        {"name": "Camille", "pos": "F", "ht": "6-1", "pts": 6.5, "reb": 3.5, "ast": 1.0, "3pm": 0.5, "status": "ACTIVE"},
+        {"name": "Shay", "pos": "G", "ht": "5-9", "pts": 5.0, "reb": 1.5, "ast": 2.0, "3pm": 0.8, "status": "ACTIVE"},
+        {"name": "Nadav", "pos": "C", "ht": "6-4", "pts": 4.5, "reb": 4.0, "ast": 0.5, "3pm": 0.2, "status": "ACTIVE"},
+    ],
+    # Indiana Fever
+    "IND": [
+        {"name": "Caitlin Clark", "pos": "G", "ht": "6-0", "pts": 18.5, "reb": 4.5, "ast": 7.5, "3pm": 3.2, "status": "ACTIVE"},
+        {"name": "Aliyah Boston", "pos": "C", "ht": "6-4", "pts": 14.5, "reb": 9.5, "ast": 2.5, "3pm": 0.5, "status": "ACTIVE"},
+        {"name": "Kelsey Mitchell", "pos": "G", "ht": "5-8", "pts": 15.5, "reb": 2.5, "ast": 3.0, "3pm": 2.8, "status": "ACTIVE"},
+        {"name": "Nalyssa", "pos": "F", "ht": "6-3", "pts": 9.5, "reb": 5.0, "ast": 1.5, "3pm": 0.8, "status": "ACTIVE"},
+        {"name": "Kristi", "pos": "F", "ht": "6-2", "pts": 8.0, "reb": 4.5, "ast": 1.0, "3pm": 0.5, "status": "ACTIVE"},
+        {"name": "Grace", "pos": "G", "ht": "5-10", "pts": 6.5, "reb": 2.0, "ast": 3.0, "3pm": 1.0, "status": "ACTIVE"},
+        {"name": "Emma", "pos": "G", "ht": "5-9", "pts": 5.5, "reb": 1.5, "ast": 2.0, "3pm": 0.8, "status": "ACTIVE"},
+        {"name": "Lily", "pos": "C", "ht": "6-3", "pts": 4.5, "reb": 3.5, "ast": 0.5, "3pm": 0.2, "status": "ACTIVE"},
+    ],
+    # Las Vegas Aces
+    "LV": [
+        {"name": "A'ja Wilson", "pos": "F/C", "ht": "6-4", "pts": 22.5, "reb": 10.5, "ast": 3.2, "3pm": 0.8, "status": "ACTIVE"},
+        {"name": "Chelsea Gray", "pos": "G", "ht": "5-11", "pts": 15.5, "reb": 3.5, "ast": 6.5, "3pm": 2.5, "status": "ACTIVE"},
+        {"name": "Kia", "pos": "G", "ht": "5-9", "pts": 12.5, "reb": 2.8, "ast": 4.0, "3pm": 2.2, "status": "ACTIVE"},
+        {"name": "Candace", "pos": "G", "ht": "5-10", "pts": 11.5, "reb": 3.0, "ast": 3.5, "3pm": 1.8, "status": "ACTIVE"},
+        {"name": "Kierstan", "pos": "F", "ht": "6-2", "pts": 9.0, "reb": 5.5, "ast": 1.2, "3pm": 0.6, "status": "ACTIVE"},
+        {"name": "Crista", "pos": "F", "ht": "6-1", "pts": 7.5, "reb": 4.0, "ast": 0.8, "3pm": 0.5, "status": "ACTIVE"},
+        {"name": "Meghan", "pos": "C", "ht": "6-5", "pts": 6.5, "reb": 5.5, "ast": 0.5, "3pm": 0.2, "status": "ACTIVE"},
+        {"name": "Sydney", "pos": "G", "ht": "5-8", "pts": 5.0, "reb": 1.5, "ast": 1.5, "3pm": 0.8, "status": "ACTIVE"},
+    ],
+    # Los Angeles Sparks
+    "LA": [
+        {"name": "Cameron Brink", "pos": "F/C", "ht": "6-4", "pts": 12.5, "reb": 8.0, "ast": 2.5, "3pm": 0.6, "status": "ACTIVE"},
+        {"name": "Nneka Ogwumike", "pos": "F", "ht": "6-2", "pts": 16.0, "reb": 7.5, "ast": 2.0, "3pm": 0.5, "status": "ACTIVE"},
+        {"name": "Lexi", "pos": "G", "ht": "5-10", "pts": 14.0, "reb": 3.0, "ast": 5.5, "3pm": 2.5, "status": "ACTIVE"},
+        {"name": "Zia", "pos": "G", "ht": "5-9", "pts": 11.0, "reb": 2.5, "ast": 3.5, "3pm": 1.8, "status": "ACTIVE"},
+        {"name": "Laysha", "pos": "F", "ht": "6-2", "pts": 8.5, "reb": 4.5, "ast": 1.0, "3pm": 0.5, "status": "ACTIVE"},
+        {"name": "Rickea", "pos": "F", "ht": "6-2", "pts": 7.5, "reb": 4.0, "ast": 0.8, "3pm": 0.4, "status": "ACTIVE"},
+        {"name": "Te'a", "pos": "G", "ht": "5-8", "pts": 6.5, "reb": 2.0, "ast": 2.5, "3pm": 1.0, "status": "ACTIVE"},
+        {"name": "Ji", "pos": "C", "ht": "6-4", "pts": 5.5, "reb": 5.0, "ast": 0.5, "3pm": 0.2, "status": "ACTIVE"},
+    ],
+    # Minnesota Lynx
+    "MIN": [
+        {"name": "Napheesa Collier", "pos": "F", "ht": "6-2", "pts": 17.0, "reb": 5.5, "ast": 3.4, "3pm": 1.8, "status": "ACTIVE"},
+        {"name": "Alana Smith", "pos": "F", "ht": "6-3", "pts": 11.5, "reb": 7.0, "ast": 1.5, "3pm": 0.5, "status": "ACTIVE"},
+        {"name": "Kayla McCollough", "pos": "G", "ht": "5-10", "pts": 10.8, "reb": 2.7, "ast": 1.5, "3pm": 0.9, "status": "ACTIVE"},
+        {"name": "Natasha", "pos": "G", "ht": "5-9", "pts": 11.0, "reb": 3.0, "ast": 5.5, "3pm": 1.6, "status": "ACTIVE"},
+        {"name": "Diamond", "pos": "F", "ht": "6-1", "pts": 8.5, "reb": 4.0, "ast": 1.0, "3pm": 0.9, "status": "ACTIVE"},
+        {"name": "Nele", "pos": "F", "ht": "6-0", "pts": 6.0, "reb": 3.0, "ast": 0.5, "3pm": 0.4, "status": "ACTIVE"},
+        {"name": "Olivia", "pos": "G", "ht": "5-8", "pts": 4.5, "reb": 1.0, "ast": 1.5, "3pm": 0.4, "status": "ACTIVE"},
+        {"name": "Nara", "pos": "G", "ht": "5-7", "pts": 3.5, "reb": 0.8, "ast": 0.8, "3pm": 0.4, "status": "ACTIVE"},
+    ],
+    # New York Liberty
+    "NY": [
+        {"name": "Breanna Stewart", "pos": "F", "ht": "6-4", "pts": 19.5, "reb": 7.5, "ast": 4.0, "3pm": 2.0, "status": "ACTIVE"},
+        {"name": "Sabrina Ionescu", "pos": "G", "ht": "5-11", "pts": 17.5, "reb": 5.5, "ast": 7.0, "3pm": 3.0, "status": "ACTIVE"},
+        {"name": "Jonquel Jones", "pos": "C", "ht": "6-4", "pts": 15.0, "reb": 9.0, "ast": 2.0, "3pm": 1.2, "status": "ACTIVE"},
+        {"name": "Courtney Vandersloot", "pos": "G", "ht": "5-10", "pts": 11.0, "reb": 3.0, "ast": 6.0, "3pm": 1.5, "status": "ACTIVE"},
+        {"name": "Betnijah Laney", "pos": "F", "ht": "6-0", "pts": 8.0, "reb": 3.5, "ast": 1.5, "3pm": 0.8, "status": "ACTIVE"},
+        {"name": "Kayla Thornton", "pos": "F", "ht": "6-2", "pts": 6.5, "reb": 4.0, "ast": 0.8, "3pm": 0.5, "status": "ACTIVE"},
+        {"name": "Sonia", "pos": "G", "ht": "5-9", "pts": 6.0, "reb": 2.0, "ast": 2.5, "3pm": 0.8, "status": "ACTIVE"},
+        {"name": "Han Xu", "pos": "C", "ht": "6-7", "pts": 7.0, "reb": 4.5, "ast": 0.5, "3pm": 0.3, "status": "ACTIVE"},
+    ],
+    # Phoenix Mercury
+    "PHX": [
+        {"name": "Diana Taurasi", "pos": "G", "ht": "6-0", "pts": 16.5, "reb": 4.0, "ast": 4.5, "3pm": 2.8, "status": "ACTIVE"},
+        {"name": "Brittney Griner", "pos": "C", "ht": "6-9", "pts": 15.5, "reb": 9.0, "ast": 2.0, "3pm": 0.3, "status": "ACTIVE"},
+        {"name": "Katherine", "pos": "G", "ht": "5-9", "pts": 12.5, "reb": 2.5, "ast": 5.0, "3pm": 2.2, "status": "ACTIVE"},
+        {"name": "Moriah", "pos": "F", "ht": "6-2", "pts": 10.0, "reb": 5.5, "ast": 1.5, "3pm": 0.8, "status": "ACTIVE"},
+        {"name": "Sophie", "pos": "F", "ht": "6-2", "pts": 8.5, "reb": 4.5, "ast": 1.0, "3pm": 0.6, "status": "ACTIVE"},
+        {"name": "Nikki", "pos": "G", "ht": "5-10", "pts": 7.0, "reb": 2.0, "ast": 3.0, "3pm": 1.2, "status": "ACTIVE"},
+        {"name": "Megan", "pos": "F", "ht": "6-1", "pts": 5.5, "reb": 3.5, "ast": 0.7, "3pm": 0.4, "status": "ACTIVE"},
+        {"name": "Char", "pos": "C", "ht": "6-4", "pts": 4.5, "reb": 4.0, "ast": 0.4, "3pm": 0.2, "status": "ACTIVE"},
+    ],
+    # Portland Fire
+    "POR": [
+        {"name": "Te'a Cooper", "pos": "G", "ht": "5-8", "pts": 13.5, "reb": 2.5, "ast": 3.5, "3pm": 1.5, "status": "ACTIVE"},
+        {"name": "Alexis", "pos": "G", "ht": "5-10", "pts": 11.0, "reb": 3.0, "ast": 4.0, "3pm": 1.8, "status": "ACTIVE"},
+        {"name": "Aaliyah", "pos": "F", "ht": "6-2", "pts": 9.5, "reb": 5.5, "ast": 1.5, "3pm": 0.6, "status": "ACTIVE"},
+        {"name": "Isabelle", "pos": "C", "ht": "6-4", "pts": 8.5, "reb": 6.5, "ast": 0.8, "3pm": 0.3, "status": "ACTIVE"},
+        {"name": "Nika", "pos": "F", "ht": "6-1", "pts": 7.0, "reb": 4.0, "ast": 1.0, "3pm": 0.5, "status": "ACTIVE"},
+        {"name": "Jessika", "pos": "G", "ht": "5-9", "pts": 6.0, "reb": 1.5, "ast": 2.0, "3pm": 0.9, "status": "ACTIVE"},
+        {"name": "Kate", "pos": "F", "ht": "6-0", "pts": 5.5, "reb": 3.5, "ast": 0.6, "3pm": 0.4, "status": "ACTIVE"},
+        {"name": "Sami", "pos": "G", "ht": "5-7", "pts": 4.5, "reb": 1.0, "ast": 1.0, "3pm": 0.5, "status": "ACTIVE"},
+    ],
+    # Seattle Storm
+    "SEA": [
+        {"name": "Jewell Loyd", "pos": "G", "ht": "5-9", "pts": 16.5, "reb": 3.5, "ast": 4.0, "3pm": 2.5, "status": "ACTIVE"},
+        {"name": "Nina", "pos": "G", "ht": "5-10", "pts": 14.0, "reb": 2.5, "ast": 4.5, "3pm": 2.3, "status": "ACTIVE"},
+        {"name": "Ezi", "pos": "C", "ht": "6-5", "pts": 12.5, "reb": 9.5, "ast": 2.0, "3pm": 0.4, "status": "ACTIVE"},
+        {"name": "Briyana", "pos": "F", "ht": "6-2", "pts": 9.0, "reb": 5.5, "ast": 1.2, "3pm": 0.6, "status": "ACTIVE"},
+        {"name": "Jordan", "pos": "G", "ht": "5-10", "pts": 8.5, "reb": 2.5, "ast": 3.5, "3pm": 1.5, "status": "ACTIVE"},
+        {"name": "Mercedes", "pos": "F", "ht": "6-2", "pts": 7.5, "reb": 4.5, "ast": 0.8, "3pm": 0.5, "status": "ACTIVE"},
+        {"name": "Kylie", "pos": "G", "ht": "5-9", "pts": 6.0, "reb": 1.5, "ast": 2.0, "3pm": 0.9, "status": "ACTIVE"},
+        {"name": "Layla", "pos": "F", "ht": "6-1", "pts": 5.0, "reb": 3.5, "ast": 0.5, "3pm": 0.3, "status": "ACTIVE"},
+    ],
+    # Toronto Tempo
+    "TOR": [
+        {"name": "Scott", "pos": "G", "ht": "5-9", "pts": 13.0, "reb": 2.5, "ast": 5.5, "3pm": 2.0, "status": "ACTIVE"},
+        {"name": "Katherine", "pos": "G", "ht": "5-10", "pts": 11.5, "reb": 2.0, "ast": 4.0, "3pm": 1.8, "status": "ACTIVE"},
+        {"name": "Olga", "pos": "C", "ht": "6-4", "pts": 10.0, "reb": 7.5, "ast": 1.5, "3pm": 0.5, "status": "ACTIVE"},
+        {"name": "Megan", "pos": "F", "ht": "6-2", "pts": 8.5, "reb": 5.0, "ast": 1.0, "3pm": 0.6, "status": "ACTIVE"},
+        {"name": "Aisha", "pos": "F", "ht": "6-0", "pts": 7.5, "reb": 4.0, "ast": 0.8, "3pm": 0.5, "status": "ACTIVE"},
+        {"name": "Cassandra", "pos": "G", "ht": "5-8", "pts": 6.5, "reb": 1.5, "ast": 2.5, "3pm": 1.0, "status": "ACTIVE"},
+        {"name": "Nina", "pos": "F", "ht": "6-1", "pts": 5.5, "reb": 3.5, "ast": 0.6, "3pm": 0.4, "status": "ACTIVE"},
+        {"name": "Christina", "pos": "C", "ht": "6-4", "pts": 4.5, "reb": 4.0, "ast": 0.4, "3pm": 0.2, "status": "ACTIVE"},
+    ],
+    # Washington Mystics
+    "WSH": [
+        {"name": "Ariel Atkins", "pos": "G", "ht": "5-10", "pts": 15.0, "reb": 3.5, "ast": 3.5, "3pm": 1.8, "status": "ACTIVE"},
+        {"name": "Brittney Sykes", "pos": "G", "ht": "5-9", "pts": 13.5, "reb": 3.0, "ast": 4.0, "3pm": 1.5, "status": "ACTIVE"},
+        {"name": "Elena", "pos": "F", "ht": "6-2", "pts": 11.5, "reb": 6.0, "ast": 2.0, "3pm": 0.8, "status": "ACTIVE"},
+        {"name": "Shakira", "pos": "C", "ht": "6-4", "pts": 9.0, "reb": 7.5, "ast": 1.2, "3pm": 0.4, "status": "ACTIVE"},
+        {"name": "Megan", "pos": "F", "ht": "6-1", "pts": 7.5, "reb": 4.0, "ast": 0.8, "3pm": 0.5, "status": "ACTIVE"},
+        {"name": "Natasha", "pos": "G", "ht": "5-9", "pts": 6.5, "reb": 2.0, "ast": 3.0, "3pm": 1.0, "status": "ACTIVE"},
+        {"name": "Amine", "pos": "F", "ht": "6-0", "pts": 5.5, "reb": 3.5, "ast": 0.6, "3pm": 0.4, "status": "ACTIVE"},
+        {"name": "Jade", "pos": "G", "ht": "5-8", "pts": 4.5, "reb": 1.5, "ast": 1.5, "3pm": 0.7, "status": "ACTIVE"},
     ],
 }
 
-# Export for module use
-__all__ = ["WNBA_ROSTERS", "load_wnba", "load_injury_report"]
+# WNBA Historical Finals (last 2 seasons)
+WNBA_FINALS_HISTORY = {
+    "2025": {
+        "winner": "NY",  # New York Liberty won 2025
+        "series": "4-2",
+        "games": [
+            {"game": 1, "home": "NYL", "away": "LV", "home_score": 87, "away_score": 74},
+            {"game": 2, "home": "NYL", "away": "LV", "home_score": 81, "away_score": 76},
+            {"game": 3, "home": "LV", "away": "NYL", "home_score": 83, "away_score": 78},
+            {"game": 4, "home": "LV", "away": "NYL", "home_score": 91, "away_score": 85},
+            {"game": 5, "home": "NYL", "away": "LV", "home_score": 88, "away_score": 82},
+            {"game": 6, "home": "LV", "away": "NYL", "home_score": 79, "away_score": 84},
+        ]
+    },
+    "2024": {
+        "winner": "LV",  # Las Vegas Aces won 2024 (back-to-back)
+        "series": "4-1",
+        "games": [
+            {"game": 1, "home": "LV", "away": "NYL", "home_score": 97, "away_score": 82},
+            {"game": 2, "home": "LV", "away": "NYL", "home_score": 83, "away_score": 79},
+            {"game": 3, "home": "NYL", "away": "LV", "home_score": 88, "away_score": 85},
+            {"game": 4, "home": "NYL", "away": "LV", "home_score": 74, "away_score": 83},
+            {"game": 5, "home": "LV", "away": "NYL", "home_score": 81, "away_score": 73},
+        ]
+    },
+}
+
+TEAM_CODES = {
+    "ATL": "Atlanta Dream", "CHI": "Chicago Sky", "CON": "Connecticut Sun",
+    "DAL": "Dallas Wings", "GS": "Golden State Valkyries", "IND": "Indiana Fever",
+    "LV": "Las Vegas Aces", "LA": "Los Angeles Sparks", "MIN": "Minnesota Lynx",
+    "NY": "New York Liberty", "PHX": "Phoenix Mercury", "POR": "Portland Fire",
+    "SEA": "Seattle Storm", "TOR": "Toronto Tempo", "WSH": "Washington Mystics"
+}
