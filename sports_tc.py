@@ -479,6 +479,7 @@ if __name__ == "__main__":
     parser.add_argument("--backtest",action="store_true")
     parser.add_argument("--dashboard",action="store_true")
     parser.add_argument("--slate",   action="store_true", help="Run all today's games")
+    parser.add_argument("--injury",  action="store_true", help="Show injury adjustments")
     args = parser.parse_args()
 
     if args.list:
@@ -488,6 +489,11 @@ if __name__ == "__main__":
             print(f"  {code}: {teams[code]}")
     elif args.backtest:
         run_backtest()
+    elif args.game:
+        import urllib.request
+        away, home = [x.strip().upper() for x in args.game.split("@")]
+        g = Game(away, home, args.sport)
+        g.full_report()
     elif args.slate:
         # Live scrape today's games
         import urllib.request
