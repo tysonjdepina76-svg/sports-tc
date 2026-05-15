@@ -1,91 +1,79 @@
 import streamlit as st
-import pandas as pd
 import subprocess
-import json
-import os
 import sys
-
-sys.path.insert(0, os.path.dirname(__file__))
+import os
 
 st.set_page_config(page_title="Sports TC", page_icon="🏀", layout="wide")
 
+st.title("🏀 Sports TC — Triple Conservative Projections")
+st.markdown("**TC = stat × 0.85 | Q = × 0.65 | OUT = 0 | Pace: +8**")
+
 # ── Sidebar controls ──
-st.sidebar.title("🏀 Sports TC")
-sport = st.sidebar.selectbox("Sport", ["WNBA", "NBA"], index=0)
-game = st.sidebar.text_input("Game", "NYL @ POR")
-show_injury = st.sidebar.checkbox("Injury Adjustments", value=True)
-refresh = st.sidebar.button("↻ Refresh")
+sport = st.sidebar.selectbox("Sport", ["NBA", "WNBA"], index=1)
+game = st.sidebar.text_input("Game (e.g. NYL @ POR)", "NYL @ POR")
+show_injury = st.sidebar.checkbox("Show Injury Report", value=True)
+refresh = st.sidebar.button("↻ Refresh Projections")
 
-# ── Header ──
-st.title("Sports TC — Triple Conservative Projections")
-st.markdown(f"**Sport:** {sport} | **Game:** {game} | **Injury Adj:** {'Yes' if show_injury else 'No'}")
+st.sidebar.markdown("---")
+st.sidebar.markdown("**Quick Slate (WNBA)**")
+if st.sidebar.button("WNBA Full Slate"):
+    game = "WNBA_SLATE"
 
-# ── Run the TC engine ──
-with st.spinner("Running TC engine..."):
-    cmd = [
-        sys.executable, "sports_tc.py",
-        "--sport", sport,
-        "--game", game
-    ]
-    if show_injury:
-        cmd.append("--injury")
+# ── Run engine ──
+if refresh or game:
+    with st.spinner("Running TC engine..."):
+        cmd = [sys.executable, "sports_tc.py", "--sport", sport, "--game", game]
+        if show_injury:
+            cmd.append("--injury")
+        result = subprocess.run(cmd, capture_output=True, text=True, cwd=os.path.dirname(__file__))
+        output = result.stdout + result.stderr
+
+    # ── Parse and display ──
+    sections = output.split("═" * 50)
     
-    result = subprocess.run(cmd, capture_output=True, text=True, cwd=os.path.dirname(__file__))
-    output = result.stdout + result.stderr
-
-# ── Parse roster table ──
-def parse_roster(output):
-    lines = output.strip().split("\n")
-    in_table = False
-    rows = []
-    for line in lines:
-        if "─" * 3 in line and ("Player" in line or "POS" in line):
-            in_table = True
+    for section in sections:
+        lines = [l for l in section.strip().split("\n") if l.strip()]
+        if not lines:
             continue
-        if in_table:
-            if line.strip() == "" or "BENCH" in line or "TEAM TOTAL" in line or "=" in line:
-                if rows:
-                    break
-                continue
-            parts = [p.strip() for p in line.split("|") if p.strip()]
-            if len(parts) >= 6:
-                rows.append(parts)
-    return rows
+        
+        # Game header
+        for line in lines[:3]:
+            if "@" in line or "SLATE" in line or "TC ROSTER" in line.upper():
+                st.subheader(f"🏀 {line.strip()}")
+        
+        # Injury report section
+        if "INJURY REPORT" in section:
+            st.markdown("### ⚕ Injury Report")
+            for line in lines:
+                if any(x in line for x in ["✅", "⚠️", "❌"]) and ("G |" in line or "F |" in line or "C |" in line):
+                    st.markdown(line.strip())
+        
+        # Starting lineup section
+        if "STARTING LINEUP" in section:
+            st.markdown("### 📋 Starting Lineup")
+            for line in lines:
+                if "TC_" in line or "Player" in line or any(f"{p} " in line for p in ["Breanna", "Sabrina", "Caitlin", "A'ja"]):
+                    if "─" not in line and len(line) > 10:
+                        st.markdown(line.strip())
+        
+        # TC projections table
+        if "TC PROJECTIONS" in section:
+            st.markdown("### 📊 TC Projections")
+            for line in lines:
+                if any(x in line for x in ["TC_PTS", "TC_LINE", "TC_EDGE", "TC_REB", "TC_AST", "TC_3PM"]):
+                    st.markdown(f"`{line.strip()}`")
+        
+        # Summary
+        if "TC SUMMARY" in section or "TC Final" in section:
+            st.markdown("### 📈 TC Summary")
+            for line in lines:
+                if any(x in line for x in ["TC", "Line", "Edge", "Signal", "OVER", "UNDER"]):
+                    if "─" not in line:
+                        st.markdown(line.strip())
 
-# ── Team totals header ──
-st.markdown("---")
-
-# Split output into sections
-sections = output.split("═" * 30)
-for section in sections:
-    lines = section.strip().split("\n")
-    if not lines:
-        continue
-    
-    # Look for game headers
-    game_lines = [l for l in lines if "@" in l or "TC ROSTER" in l or "SLATE" in l]
-    team_lines = [l for l in lines if any(t in l for t in ["NYL","POR","LVA","IND","MIN","DAL","CON","CHI","ATL","SEA","NBA"])]
-    
-    # Show game header
-    for gl in game_lines[:2]:
-        if gl.strip():
-            st.subheader(f"🏀 {gl.strip()}")
-    
-    # Parse and display roster
-    roster_rows = parse_roster(section)
-    if roster_rows:
-        cols = ["Player", "POS", "TC_PTS", "TC_REB", "TC_AST", "TC_3PM", "Status"]
-        df = pd.DataFrame(roster_rows, columns=cols[:len(roster_rows[0])])
-        st.dataframe(df, use_container_width=True)
-    
-    # Show team totals
-    for line in lines:
-        if "TEAM TOTAL" in line or "BENCH" in line:
-            st.markdown(f"`{line.strip()}`")
-
-# ── Raw output fallback ──
-if "Player" not in output:
-    st.text_area("TC Output", output, height=400)
+    # ── Raw output ──
+    with st.expander("📄 Raw Engine Output"):
+        st.text(output)
 
 st.markdown("---")
-st.caption("Sports TC v3.0 | TC = stat × 0.85 | Q = 0.65 | OUT = 0")
+st.caption("Sports TC v4.0 | NBA + WNBA | TC = stat × 0.85 | Q = × 0.65 | OUT = 0")
