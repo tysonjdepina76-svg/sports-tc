@@ -1,0 +1,3 @@
+generated_at,sport,away,home,away_raw_pts,home_raw_pts,raw_game_pts,market_total,market_spread,report_md,report_json
+2026-05-22 21:02:53,WNBA,DAL,ATL,94.9,88.8,183.7,172.5,-5.5,/home/workspace/sports-tc/reports/WNBA_DAL_at_ATL_20260522_210253.md,/home/workspace/sports-tc/data/WNBA_DAL_at_ATL_20260522_210253.json
+2026-05-22 21:02:53,NBA,NYK,PHI,121.0,130.5,251.5,,,/home/workspace/sports-tc/reports/NBA_NYK_at_PHI_20260522_210253.md,/home/workspace/sports-tc/data/NBA_NYK_at_PHI_20260522_210253.json

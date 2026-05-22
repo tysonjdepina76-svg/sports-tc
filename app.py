@@ -1,79 +1,117 @@
-import streamlit as st
+#!/usr/bin/env python3
+"""Sports TC - Flask Dashboard v5.0"""
+from flask import Flask, render_template_string, request
 import subprocess
-import sys
-import os
 
-st.set_page_config(page_title="Sports TC", page_icon="🏀", layout="wide")
+app = Flask(__name__)
 
-st.title("🏀 Sports TC — Triple Conservative Projections")
-st.markdown("**TC = stat × 0.85 | Q = × 0.65 | OUT = 0 | Pace: +8**")
+HTML = '''
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sports TC Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 1280px; margin: 0 auto; padding: 20px; background: #0f1419; color: #fff; }
+        h1, h2 { color: #00d4aa; }
+        .card { background: #1a1f26; border-radius: 14px; padding: 20px; margin: 16px 0; border: 1px solid #26313d; }
+        .formula { background: #242d38; padding: 12px; border-radius: 8px; margin: 10px 0; font-family: monospace; color: #d7fff5; }
+        input, select { background: #242d38; color: #fff; border: 1px solid #38444d; padding: 10px; border-radius: 6px; width: 100%; margin: 6px 0 14px; box-sizing: border-box; }
+        label { color: #aab8c2; font-size: 12px; text-transform: uppercase; font-weight: bold; }
+        button { background: #00d4aa; color: #000; padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; }
+        button:hover { background: #00e8bb; }
+        pre { background: #050607; padding: 16px; border-radius: 8px; white-space: pre-wrap; overflow-x: auto; max-height: 720px; font-size: 12px; line-height: 1.35; }
+        .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+        .pill { background: #101820; padding: 10px; border-radius: 8px; border: 1px solid #26313d; }
+        .small { color: #8899a6; font-size: 12px; }
+        .warn { color: #ffcc66; }
+    </style>
+</head>
+<body>
+    <h1>Sports TC Dashboard</h1>
+    <div class="formula">
+        TC player props only: PTS×0.85 | REB×0.80 | AST×0.75 | 3PM×0.70 | Q×0.55 | OUT=0<br>
+        Team totals and game totals are RAW projections only — no TC totals, no TC edges.
+    </div>
 
-# ── Sidebar controls ──
-sport = st.sidebar.selectbox("Sport", ["NBA", "WNBA"], index=1)
-game = st.sidebar.text_input("Game (e.g. NYL @ POR)", "NYL @ POR")
-show_injury = st.sidebar.checkbox("Show Injury Report", value=True)
-refresh = st.sidebar.button("↻ Refresh Projections")
+    <div class="grid">
+      <div class="pill"><b>NBA + WNBA</b><br><span class="small">Unified pipeline</span></div>
+      <div class="pill"><b>Starters / Bench</b><br><span class="small">Separated for backtest</span></div>
+      <div class="pill"><b>Injury Notes</b><br><span class="small">Saved per team</span></div>
+      <div class="pill"><b>Backtest Seed</b><br><span class="small">Optional save to CSV</span></div>
+    </div>
 
-st.sidebar.markdown("---")
-st.sidebar.markdown("**Quick Slate (WNBA)**")
-if st.sidebar.button("WNBA Full Slate"):
-    game = "WNBA_SLATE"
+    <div class="card">
+        <form method="POST">
+            <label>Sport</label>
+            <select name="sport">
+                <option value="WNBA" {{ 'selected' if sport=='WNBA' else '' }}>WNBA</option>
+                <option value="NBA" {{ 'selected' if sport=='NBA' else '' }}>NBA</option>
+            </select>
+            <label>Game</label>
+            <input type="text" name="game" value="{{ game }}" placeholder="DAL @ ATL">
+            <label>Market Total (optional, kept separate from TC)</label>
+            <input type="text" name="total" value="{{ total }}" placeholder="172.5">
+            <label>Market Spread (optional, kept separate from TC)</label>
+            <input type="text" name="spread" value="{{ spread }}" placeholder="-5.5">
+            <label>Mode</label>
+            <select name="mode">
+                <option value="report" {{ 'selected' if mode=='report' else '' }}>Generate Report</option>
+                <option value="save" {{ 'selected' if mode=='save' else '' }}>Generate + Save Backtest Seed</option>
+                <option value="diagnostics" {{ 'selected' if mode=='diagnostics' else '' }}>Run Diagnostics</option>
+            </select>
+            <button type="submit">Run Pipeline</button>
+        </form>
+    </div>
 
-# ── Run engine ──
-if refresh or game:
-    with st.spinner("Running TC engine..."):
-        cmd = [sys.executable, "sports_tc.py", "--sport", sport, "--game", game]
-        if show_injury:
-            cmd.append("--injury")
-        result = subprocess.run(cmd, capture_output=True, text=True, cwd=os.path.dirname(__file__))
-        output = result.stdout + result.stderr
+    {% if output %}
+    <div class="card">
+        <h2>Output</h2>
+        <pre>{{ output }}</pre>
+    </div>
+    {% endif %}
 
-    # ── Parse and display ──
-    sections = output.split("═" * 50)
-    
-    for section in sections:
-        lines = [l for l in section.strip().split("\n") if l.strip()]
-        if not lines:
-            continue
-        
-        # Game header
-        for line in lines[:3]:
-            if "@" in line or "SLATE" in line or "TC ROSTER" in line.upper():
-                st.subheader(f"🏀 {line.strip()}")
-        
-        # Injury report section
-        if "INJURY REPORT" in section:
-            st.markdown("### ⚕ Injury Report")
-            for line in lines:
-                if any(x in line for x in ["✅", "⚠️", "❌"]) and ("G |" in line or "F |" in line or "C |" in line):
-                    st.markdown(line.strip())
-        
-        # Starting lineup section
-        if "STARTING LINEUP" in section:
-            st.markdown("### 📋 Starting Lineup")
-            for line in lines:
-                if "TC_" in line or "Player" in line or any(f"{p} " in line for p in ["Breanna", "Sabrina", "Caitlin", "A'ja"]):
-                    if "─" not in line and len(line) > 10:
-                        st.markdown(line.strip())
-        
-        # TC projections table
-        if "TC PROJECTIONS" in section:
-            st.markdown("### 📊 TC Projections")
-            for line in lines:
-                if any(x in line for x in ["TC_PTS", "TC_LINE", "TC_EDGE", "TC_REB", "TC_AST", "TC_3PM"]):
-                    st.markdown(f"`{line.strip()}`")
-        
-        # Summary
-        if "TC SUMMARY" in section or "TC Final" in section:
-            st.markdown("### 📈 TC Summary")
-            for line in lines:
-                if any(x in line for x in ["TC", "Line", "Edge", "Signal", "OVER", "UNDER"]):
-                    if "─" not in line:
-                        st.markdown(line.strip())
+    <p class="small warn">Use prop candidates as a watchlist only until sportsbook lines are checked.</p>
+</body>
+</html>
+'''
 
-    # ── Raw output ──
-    with st.expander("📄 Raw Engine Output"):
-        st.text(output)
 
-st.markdown("---")
-st.caption("Sports TC v4.0 | NBA + WNBA | TC = stat × 0.85 | Q = × 0.65 | OUT = 0")
+def as_float(value):
+    try:
+        if value in (None, ""):
+            return None
+        return float(value)
+    except Exception:
+        return None
+
+
+@app.route('/', methods=['GET', 'POST'])
+def home():
+    sport = request.form.get('sport', 'WNBA') if request.method == 'POST' else 'WNBA'
+    game = request.form.get('game', 'DAL @ ATL') if request.method == 'POST' else 'DAL @ ATL'
+    total = request.form.get('total', '172.5') if request.method == 'POST' else '172.5'
+    spread = request.form.get('spread', '-5.5') if request.method == 'POST' else '-5.5'
+    mode = request.form.get('mode', 'report') if request.method == 'POST' else 'report'
+    output = ''
+
+    if request.method == 'POST':
+        cmd = ['python3', '/home/workspace/sports-tc/tc_pipeline.py']
+        if mode == 'diagnostics':
+            cmd.append('--diagnostics')
+        else:
+            cmd += ['--sport', sport, '--game', game]
+            if as_float(total) is not None:
+                cmd += ['--total', str(as_float(total))]
+            if as_float(spread) is not None:
+                cmd += ['--spread', str(as_float(spread))]
+            if mode == 'save':
+                cmd.append('--save')
+        result = subprocess.run(cmd, capture_output=True, text=True, cwd='/home/workspace/sports-tc', timeout=30)
+        output = (result.stdout + result.stderr)[:30000]
+
+    return render_template_string(HTML, sport=sport, game=game, total=total, spread=spread, mode=mode, output=output)
+
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8507, debug=False)
