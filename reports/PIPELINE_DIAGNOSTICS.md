@@ -1,6 +1,6 @@
 # Sports TC Pipeline Diagnostics
 
-Generated: 2026-05-22 21:38:03
+Generated: 2026-05-22 21:57:33
 
 | Check | Status |
 |---|---:|
@@ -8,14 +8,19 @@ Generated: 2026-05-22 21:38:03
 | WNBA roster JSON exists | PASS |
 | NBA teams loaded | PASS |
 | Every NBA team has starters | PASS |
-| Every NBA team has bench | PASS |
 | Every NBA team has injury_notes | PASS |
+| WNBA teams loaded | PASS |
+| Every WNBA team has starters | PASS |
 | Build NBA BOS @ NYK | PASS |
-| No TC fields in game dict | PASS |
-| Prop candidates generated | PASS |
+| NBA has model_totals section | PASS |
+| NBA no tc_game_total field | PASS |
+| NBA prop candidates | PASS |
 | Build WNBA DAL @ ATL | PASS |
-| No TC total fields in game dict | PASS |
-| Prop candidates generated | PASS |
+| WNBA has model_totals section | PASS |
+| WNBA no tc_game_total field | PASS |
+| WNBA prop candidates | PASS |
 
-## Rule Verification
-Team and game totals are raw projection totals only. TC is only present under player prop floors and prop candidate fields.
+## Canonical Rules
+- TC is the primary player-prop model.
+- Raw/model team and game totals are separate and never labeled TC totals.
+- NFRI, Pace, Home Court, and Momentum are optional layers for model totals.
