@@ -2,12 +2,12 @@
 """
 ╔══════════════════════════════════════════════════════════════╗
 ║           SPORTS TC v4.0 — Triple Conservative Engine        ║
-║               NBA + WNBA | pts × 0.85 | Q × 0.65             ║
+║              NBA + WNBA | pts × 0.85 | Q × 0.55             ║
 ╚══════════════════════════════════════════════════════════════╝
 
 FORMULA:
   ACTIVE  → stat × 0.85
-  Q       → stat × 0.85 × 0.65  (CONS first, then status)
+  Q       → stat × 0.85 × 0.55  (CONS first, then status)
   OUT     → 0
 
 EDGE MODEL:
@@ -33,7 +33,7 @@ warnings.filterwarnings("ignore")
 
 # ── CONSTANTS ────────────────────────────────────────────────
 CONS       = 0.85
-Q_MULT     = 0.65
+Q_MULT     = 0.55
 VAR_LOW    = 0.76   # |spread| < 8
 VAR_HIGH   = 0.82   # |spread| >= 8
 PACE_ADJ   = 8.0    # added to raw combined when NO spread
@@ -149,7 +149,7 @@ class Game:
     def injury_report(self):
         print(f"\n{'='*72}")
         print(f"  ⚕  INJURY REPORT — {self.away.code} @ {self.home.code}")
-        print(f"  TC = stat × 0.85 | Q = × 0.65 | OUT = 0")
+        print(f"  TC = stat × 0.85 | Q = × 0.55 | OUT = 0")
         print(f"{'='*72}")
         for team in [self.away, self.home]:
             active = [p for p in team.players if p.status == "ACTIVE"]
@@ -188,7 +188,7 @@ class Game:
     def tc_projections(self):
         print(f"\n{'='*72}")
         print(f"  📊 TC PROJECTIONS — {self.away.code} @ {self.home.code}")
-        print(f"  Formula: stat × 0.85 | Q = × 0.65 | OUT = 0 | Bench floor: 20")
+        print(f"  Formula: stat × 0.85 | Q = × 0.55 | OUT = 0 | Bench floor: 20")
         print(f"{'='*72}")
         for team in [self.away, self.home]:
             print(f"\n  {team.code} — {team.name}")
@@ -536,7 +536,7 @@ BACKTEST_SUITE = [
 def run_backtest():
     print(f"\n{'='*72}")
     print(f"  TC BACKTEST v4.0 — Corrected Formula")
-    print(f"  TC = stat×0.85 | Q = ×0.65 | OUT = 0 | Pace: +8 | Line: ×0.88")
+    print(f"  TC = stat×0.85 | Q = ×0.55 | OUT = 0 | Pace: +8 | Line: ×0.88")
     print(f"{'='*72}\n")
     for away,home,sport,actual,mkt in BACKTEST_SUITE:
         g = Game(away, home, sport, market_total=mkt)
@@ -616,7 +616,7 @@ if __name__ == "__main__":
 ╔══════════════════════════════════════════════════════════════╗
 ║              SPORTS TC v4.0 — MASTER ENGINE                   ║
 ║         NBA + WNBA Triple Conservative System                 ║
-║  TC = stat×0.85 | Q = ×0.65 | OUT = 0 | Pace: +8              ║
+║  TC = stat×0.85 | Q = ×0.55 | OUT = 0 | Pace: +8              ║
 ║  TC Line = TC×0.88 | Edge = TC−Line | Signal: UNDER            ║
 ╚══════════════════════════════════════════════════════════════╝
 
